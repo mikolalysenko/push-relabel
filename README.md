@@ -60,8 +60,7 @@ API
 ===
 There are two functions exposed by the library:
 
-`pushRelabel.maxFlow(num_vertices, source, sink, edges, capacities[, flow, dual])`
-----------------------------------------------------------------------------------
+### `pushRelabel.maxFlow(num_vertices, source, sink, edges, capacities[, flow, dual])`
 Computes a [maximum flow](http://en.wikipedia.org/wiki/Maximum_flow_problem) in a network.
 
 * `num_vertices` is the number of vertices in the graph
@@ -76,8 +75,7 @@ Computes a [maximum flow](http://en.wikipedia.org/wiki/Maximum_flow_problem) in 
 
 Returns: The flow, which is stored in the object `flow`
 
-`pushRelabel.minCut(num_vertices, source, sink, edges, capacities[, cut, dual])`
---------------------------------------------------------------------------------
+### `pushRelabel.minCut(num_vertices, source, sink, edges, capacities[, cut, dual])`
 Computes a [minimum cut](http://en.wikipedia.org/wiki/Minimum_cut) in a flow network
 
 * `num_vertices` is the number of vertices in the graph
