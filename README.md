@@ -9,7 +9,9 @@ push-relabel
 * [Image segmentation](http://en.wikipedia.org/wiki/Graph_cuts_in_computer_vision)
 * [Stereo vision](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=1315016&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D1315016)
 
-This library is a simple implementation of Goldberg and Tarjan's [push-relabel algorithm](http://en.wikipedia.org/wiki/Push%E2%80%93relabel_maximum_flow_algorithm) in JavaScript.  It use the relabel-to-front as well as the global and gap relabelling heuristics, as described by [Cherkassy and Goldberg](https://www.ads.tuwien.ac.at/teaching/archiv/praktika/CherkasskyGoldberg-1995-MaxFlow.pdf), giving it a run time on the order of |V|^3 in the worst case
+This library is an implementation of Goldberg and Tarjan's [push-relabel algorithm](http://en.wikipedia.org/wiki/Push%E2%80%93relabel_maximum_flow_algorithm) for solving network flow problems in JavaScript.  It use relabel-to-front ordering as well as the global and gap relabelling heuristics, as described by [Cherkassy and Goldberg](https://www.ads.tuwien.ac.at/teaching/archiv/praktika/CherkasskyGoldberg-1995-MaxFlow.pdf), giving it a run time on the order of |V|^3 in the worst case.
+
+Currently in early development, patches welcome!
 
 Usage
 =====

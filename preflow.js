@@ -8,19 +8,21 @@ var EPSILON = 1e-8
 
 //Flow stuff
 var GAP = 0
+var MAX_LABEL = 0
 var LABEL = new Uint32Array(1024)
 var EXCESS = new Float64Array(1024)
 var SEEN = new Uint32Array(1024)
-var LABEL_COUNT = new Uint32Array(1024)
+var LABEL_COUNT = new Uint32Array(2048)
 
 //Basic data structure intialization
 function initFlow(num_vertices) {
+  MAX_LABEL = GAP = 2*num_vertices
   if(num_vertices > LABEL.length) {
     var nl = bits.nextPow2(num_vertices)
     LABEL = new Uint32Array(nl)
     EXCESS = new Float64Array(nl)
     SEEN = new Uint32Array(nl)
-    LABEL_COUNT = new Uint32Array(2*nl)
+    LABEL_COUNT = new Uint32Array(MAX_LABEL)
   } else {
     for(var i=0; i<num_vertices; ++i) {
       LABEL[i] = 0
@@ -28,11 +30,10 @@ function initFlow(num_vertices) {
       SEEN[i] = 0
       LABEL_COUNT[i] = 0
     }
-    for(i=num_vertices; i<2*num_vertices; ++i) {
+    for(i=num_vertices; i<MAX_LABEL; ++i) {
       LABEL_COUNT[i] = 0
     }
   }
-  GAP = 2*num_vertices
 }
 
 //cache-oblivious queue
@@ -114,14 +115,12 @@ function dischargeSource(num_vertices, source, sink, edges, capacities, flow, du
 
 //Global relabeling heuristic.  Recomputes all the LABELs for all the nodes in the graph
 function globalRelabel(num_vertices, source, sink, edges, capacities, flow, dual) {
-  console.log("GLOBAL RELABEL")
   //First, clear LABELs
   for(var i=0; i<num_vertices; ++i) {
-    if(LABEL[i] >= GAP) {
-      LABEL[i] = 2*num_vertices
-    }
-    if(LABEL[i] < 2*num_vertices) {
+    if(LABEL[i] < GAP) {
       LABEL[i] = 0
+    } else {
+      LABEL[i] = MAX_LABEL
     }
     LABEL_COUNT[i] = 0
   }
@@ -130,7 +129,7 @@ function globalRelabel(num_vertices, source, sink, edges, capacities, flow, dual
     , c = p
   FIFO[--p] = sink
   LABEL[sink] = 1
-  LABEL[source] = 2*num_vertices
+  LABEL[source] = MAX_LABEL
   while(c > p) {
     var u = FIFO[--c], v
       , h = LABEL[u]+1
@@ -200,7 +199,7 @@ function push(e, u, edges, capacities, flow) {
 
 //Relabel vertex u
 function relabel(u, nbhd, num_vertices, edges, capacities, flow) {
-  var label = 2*num_vertices, v
+  var label = MAX_LABEL, v
   for(var i=nbhd.length-1; i>=0; --i) {
     var e = nbhd[i]
       , cap = capacities[e]
@@ -220,7 +219,7 @@ function relabel(u, nbhd, num_vertices, edges, capacities, flow) {
     label = Math.min(label, LABEL[v])
   }
   //Update label
-  ++label
+  label = Math.min(MAX_LABEL, label+1)
   if(LABEL[u] !== label) {
     ++LABEL_COUNT[label]
     if(--LABEL_COUNT[LABEL[u]] === 0) {
@@ -249,10 +248,11 @@ function pushRelabel(num_vertices, source, sink, edges, capacities, flow, dual) 
     }
     //If u is above gap throw it out
     if(LABEL[u] > GAP) {
-      FIFO[u] = -1
-      LABEL[u] = 2*num_vertices
+      FIFO[p] = -1
+      LABEL[u] = MAX_LABEL
       continue
     }
+
     //Discharge u
     var nbhd = dual[u]
     while(EXCESS[u] > 0) {
@@ -274,21 +274,154 @@ function pushRelabel(num_vertices, source, sink, edges, capacities, flow, dual) 
   }
 }
 
+//Remove excess flow along a cycle
+function removeCycle(cycle_edge, start, end, offset, edges, capacities, flow, dual) {
+  //Step 1: Compute excess flow along cycle
+  var parents = LABEL
+    , path = SEEN
+    , p = 0
+    , u = start
+    , delta = EXCESS[end]
+  if(cycle_edge >= 0) {
+    var edge = edges[cycle_edge]
+    if(edge[0] === start) {
+      delta = capacities[cycle_edge] - flow[cycle_edge]
+    } else {
+      delta = capacities[cycle_edge] + flow[cycle_edge]
+    }
+  }
+  while(u !== end) {
+    var v = parents[u] - offset
+      , nbhd = dual[u]
+    for(var i=nbhd.length-1; i>=0; --i) {
+      var e = nbhd[i]
+        , cap = capacities[e]
+        , flo = flow[e]
+        , edge = edges[e]
+        , D
+      if(edge[0] === v) {
+        D = cap - flo
+      } else if(edge[1] === v) {
+        D = cap + flo
+      } else {
+        continue
+      }
+      if(D < EPSILON) {
+        continue
+      }
+      //console.log(u+"->"+v, D)
+      path[p++] = e
+      delta = Math.min(delta, D)
+      break
+    }
+    u = v
+  }
+  //console.log("Capacity=", delta)
+  
+  //Step 2: drain flow
+  if(cycle_edge >= 0) {
+    var edge = edges[cycle_edge]
+    if(edge[0] === start) {
+      flow[cycle_edge] -= delta
+    } else {
+      flow[cycle_edge] += delta
+    }
+  }
+  u = start
+  EXCESS[end] -= delta
+  for(var i=0; i<p; ++i) {
+    var e = path[i]
+    if(edges[e][0] === u) {
+      flow[e] -= delta
+    } else {
+      flow[e] += delta
+    }
+    u = parents[u] - offset
+  }
+}
+
+
+
 function removeExcess(num_vertices, source, sink, edges, capacities, flow, dual) {
+
+  //console.log("Draining excess flow")
+
+  //Remove flow along self-loops
+  for(var i=0; i<edges.length; ++i) {
+    var edge = edges[i]
+    if(edge[0] === edge[1]) {
+      var f = flow[i]
+      if(f < 0) {
+        EXCESS[edge[0]] += f
+      } else {
+        EXCESS[edge[0]] -= f
+      }
+      flow[i] = 0
+    }
+  }
+
+  //Remove excess flow from cycles
+  var step = MAX_LABEL+1
+    , offset = 0
+    , stack = SEEN
+    , parents = LABEL
   for(var i=num_vertices-1; i>=0; --i) {
     if(i === source || i === sink) {
       continue
     }
-    /*
-    while(EXCESS[u] > 0) {
-      //DFS outward
-      var v = u
-      while(EXCESS[v] > 0 && v !== source && v !== sink) {
-        var nbhd = dual[v]
-        for
+u_loop:
+    while(EXCESS[i] > EPSILON) {
+      //DFS from u
+      var sp=0
+      offset += step
+      parents[i] = offset + i
+      parents[source] = offset
+      stack[sp++] = i
+      //console.log("Starting DFS from: ", i, ", XS=", EXCESS[i])
+      while(sp > 0) {
+        var u = stack[--sp], v
+          , nbhd = dual[u]
+        //console.log("Visit:", u, " parent = ", LABEL[u]-offset)
+        for(var j=nbhd.length-1; j>=0; --j) {
+          var e = nbhd[j]
+            , cap = capacities[e]
+            , flo = flow[e]
+            , edge = edges[e]
+          if(edge[0] === u) {
+            if(cap - flo < EPSILON) {
+              continue
+            }
+            v = edge[1]
+          } else {
+            if(cap + flo < EPSILON) {
+              continue
+            }
+            v = edge[0]
+          }
+          if(EXCESS[v] < EPSILON) {
+            continue
+          }
+          //console.log("edge:", edge, cap+"/"+flo)
+          //Found a back edge
+          if(parents[v] >= offset) {
+            //console.log("Back edge found")
+            if(v === source) {
+              //console.log("Path", v, i)
+              LABEL[source] = offset+u
+              removeCycle(-1, v, i, offset, edges, capacities, flow, dual)
+            } else {
+              //console.log("Cycle", u, v)
+              removeCycle(e, u, i, offset, edges, capacities, flow, dual)
+            }
+            continue u_loop
+          } else {
+            LABEL[v] = offset + u
+            stack[sp++] = v
+          }
+        }
       }
+      break
     }
-    */
   }
 }
 
@@ -319,7 +452,7 @@ function maxFlow(num_vertices, source, sink, edges, capacities, flow, dual) {
   dischargeSource(num_vertices, source, sink, edges, capacities, flow, dual)
   globalRelabel(num_vertices, source, sink, edges, capacities, flow, dual)
   
-  //Solving
+  //Solve using Goldberg&Tarjan's two-phase algorithm
   pushRelabel(num_vertices, source, sink, edges, capacities, flow, dual)
   removeExcess(num_vertices, source, sink, edges, capacities, flow, dual)
   
@@ -358,8 +491,9 @@ function minCut(num_vertices, source, sink, edges, capacities, cut, dual) {
   dischargeSource(num_vertices, source, sink, edges, capacities, flow, dual)
   globalRelabel(num_vertices, source, sink, edges, capacities, flow, dual)
   
-  //Only do push relabel phase, compute cut
+  //Only do push-relabel phase, can compute cut from saturated preflow
   pushRelabel(num_vertices, source, sink, edges, capacities, flow, dual)
+  
   if(!cut) {
     cut = new Uint8Array(num_vertices)
   }
