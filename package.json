@@ -1,0 +1,46 @@
+{
+  "name": "push-relabel",
+  "version": "0.0.0",
+  "description": "A push-relabel network flow solver",
+  "main": "preflow.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "bit-twiddle": "~0.0.1",
+    "simplicial-complex": "~0.3.0"
+  },
+  "devDependencies": {
+    "tap": "~0.4.0"
+  },
+  "scripts": {
+    "test": "tap test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mikolalysenko/push-relabel.git"
+  },
+  "keywords": [
+    "network",
+    "flow",
+    "max",
+    "min",
+    "cut",
+    "maxflow",
+    "mincut",
+    "transportation",
+    "matching",
+    "segmentation",
+    "graph",
+    "graphcut",
+    "push",
+    "relabel",
+    "preflow",
+    "selection",
+    "project"
+  ],
+  "author": "Mikola Lysenko",
+  "license": "BSD",
+  "readmeFilename": "README.md",
+  "gitHead": "c507d7c686c28a00ee859a537d4fd74c137a49b6"
+}
