@@ -5,7 +5,7 @@ push-relabel
 * [Transportation problems](http://en.wikipedia.org/wiki/Transportation_problem)
 * [Assignment problems](http://en.wikipedia.org/wiki/Assignment_problem)
 * [Bipartite matching](http://en.wikipedia.org/wiki/Bipartite_matching#Maximum_bipartite_matchings)
-* [Project selection](http://www.jstor.org/discover/10.2307/2582634?uid=3739664&uid=2&uid=4&uid=3739256&sid=21101798266301)
+* [Project selection](http://en.wikipedia.org/wiki/Max-flow_min-cut_theorem#Project_selection_problem)
 * [Image segmentation](http://en.wikipedia.org/wiki/Graph_cuts_in_computer_vision)
 * [Stereo vision](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=1315016&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D1315016)
 
