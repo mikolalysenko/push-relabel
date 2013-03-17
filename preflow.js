@@ -187,10 +187,12 @@ function push(e, u, edges, capacities, flow) {
     v = edge[0]
     sign = -1
   }
+  //console.log("try push: ", edge, u, LABEL[u], v, LABEL[v])
   if(delta < EPSILON || LABEL[u] <= LABEL[v]) {
     return false
   }
   delta = Math.min(EXCESS[u], delta)
+  //console.log("Push:", u+"->"+v, ",", delta, EXCESS[u])
   EXCESS[u] -= delta
   EXCESS[v] += delta
   flow[e] += sign * delta
@@ -220,6 +222,7 @@ function relabel(u, nbhd, num_vertices, edges, capacities, flow) {
   }
   //Update label
   label = Math.min(MAX_LABEL, label+1)
+  //console.log("RELABEL:", u, LABEL[u] + "->" + label)
   if(LABEL[u] !== label) {
     ++LABEL_COUNT[label]
     if(--LABEL_COUNT[LABEL[u]] === 0) {
@@ -252,10 +255,12 @@ function pushRelabel(num_vertices, source, sink, edges, capacities, flow, dual) 
       LABEL[u] = MAX_LABEL
       continue
     }
-
+    
     //Discharge u
     var nbhd = dual[u]
-    while(EXCESS[u] > 0) {
+    //console.log("Discharge:", u, "XS:", EXCESS[u], "NBHD:", nbhd, "SEEN:", SEEN[u], "LABEL:", LABEL[u])
+    while(EXCESS[u] > EPSILON) {
+      //console.log(u, SEEN[u])
       if(SEEN[u] < nbhd.length) {
         //Push along edge
         if(push(nbhd[SEEN[u]++], u, edges, capacities, flow)) {
@@ -264,7 +269,8 @@ function pushRelabel(num_vertices, source, sink, edges, capacities, flow, dual) 
       } else {
         //Relabel vertex, move u to front
         if(relabel(u, nbhd, num_vertices, edges, capacities, flow)) {
-          p = moveToFront(p)
+          moveToFront(p)
+          p = -1
           --global_countdown
         }
         SEEN[u] = 0
