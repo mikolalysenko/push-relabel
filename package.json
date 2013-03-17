@@ -1,6 +1,6 @@
 {
   "name": "push-relabel",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "A push-relabel network flow solver",
   "main": "preflow.js",
   "directories": {
